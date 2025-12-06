@@ -1,16 +1,113 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function SettingsPage() {
-  const [mode, setMode] = useState<'protection' | 'monitor'>('protection')
-  const [dealershipName, setDealershipName] = useState('Koons Motors')
-  const [phone, setPhone] = useState('(555) 123-4567')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [dealershipId, setDealershipId] = useState<string | null>(null)
+  
+  const [mode, setMode] = useState<'protection' | 'monitor'>('protection')
+  const [dealershipName, setDealershipName] = useState('')
+  const [phone, setPhone] = useState('')
 
-  const handleSave = () => {
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadSettings() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('dealership_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.dealership_id) {
+        setLoading(false)
+        return
+      }
+
+      setDealershipId(profile.dealership_id)
+
+      const { data: dealership } = await supabase
+        .from('dealerships')
+        .select('name')
+        .eq('id', profile.dealership_id)
+        .single()
+
+      if (dealership) {
+        setDealershipName(dealership.name)
+      }
+
+      const { data: config } = await supabase
+        .from('configurations')
+        .select('*')
+        .eq('dealership_id', profile.dealership_id)
+        .single()
+
+      if (config) {
+        setMode(config.mode || 'protection')
+        setPhone(config.phone || '')
+      }
+
+      setLoading(false)
+    }
+
+    loadSettings()
+  }, [supabase])
+
+  const handleSave = async () => {
+    if (!dealershipId) return
+    
+    setSaving(true)
+    
+    await supabase
+      .from('dealerships')
+      .update({ name: dealershipName })
+      .eq('id', dealershipId)
+
+    const { data: existingConfig } = await supabase
+      .from('configurations')
+      .select('id')
+      .eq('dealership_id', dealershipId)
+      .single()
+
+    if (existingConfig) {
+      await supabase
+        .from('configurations')
+        .update({ mode, phone })
+        .eq('dealership_id', dealershipId)
+    } else {
+      await supabase
+        .from('configurations')
+        .insert({ dealership_id: dealershipId, mode, phone })
+    }
+
+    setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      </div>
+    )
+  }
+
+  if (!dealershipId) {
+    return (
+      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 text-center">
+        <span className="text-4xl mb-4 block">⚠️</span>
+        <p className="text-yellow-400 font-medium">No dealership linked</p>
+        <p className="text-sm text-slate-400 mt-2">Contact support to link your account.</p>
+      </div>
+    )
   }
 
   return (
@@ -36,9 +133,7 @@ export default function SettingsPage() {
               <span className="text-2xl">🛡️</span>
               <span className="font-semibold text-white">Protection</span>
             </div>
-            <p className="text-sm text-slate-400 text-left">
-              Block dangerous responses
-            </p>
+            <p className="text-sm text-slate-400 text-left">Block dangerous responses</p>
           </button>
           <button
             onClick={() => setMode('monitor')}
@@ -52,9 +147,7 @@ export default function SettingsPage() {
               <span className="text-2xl">👁️</span>
               <span className="font-semibold text-white">Monitor</span>
             </div>
-            <p className="text-sm text-slate-400 text-left">
-              Log without blocking
-            </p>
+            <p className="text-sm text-slate-400 text-left">Log without blocking</p>
           </button>
         </div>
       </div>
@@ -78,17 +171,20 @@ export default function SettingsPage() {
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 123-4567"
               className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>
       </div>
 
+      {/* Save Button */}
       <button
         onClick={handleSave}
-        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition"
+        disabled={saving}
+        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold rounded-xl transition"
       >
-        {saved ? '✓ Saved!' : 'Save Changes'}
+        {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
       </button>
     </div>
   )

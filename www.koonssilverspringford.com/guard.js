@@ -1,25 +1,46 @@
 /**
- * LOMEL AI - Guard.js (Simplified)
+ * LOMEL AI - Guard.js
  * The Final Safety Layer for Unreliable AI Chatbots
+ * 
+ * INSTALLATION (add to dealership website <head>):
+ * 
+ * <script 
+ *   src="https://cdn.lomel.ai/guard.js" 
+ *   data-dealership="YOUR_DEALERSHIP_SLUG"
+ *   data-api="https://api.lomel.ai">
+ * </script>
+ * 
+ * Or for local testing:
+ * <script 
+ *   src="/guard.js" 
+ *   data-dealership="koons-motors"
+ *   data-api="http://localhost:3001">
+ * </script>
  */
 
 (function() {
   'use strict';
 
   // ============================================================
-  // CONFIGURATION
+  // GET CONFIGURATION FROM SCRIPT TAG
   // ============================================================
   
+  const scriptTag = document.currentScript || document.querySelector('script[data-dealership]');
+  
   const CONFIG = {
-    dealershipId: 'demo-dealership',
-    mode: 'protection', // 'monitor' or 'protection'
+    // Required: Unique identifier for this dealership
+    dealershipId: scriptTag?.getAttribute('data-dealership') || 'demo-dealership',
     
-    // API
-    apiEndpoint: 'http://localhost:3001/api/evaluate',
-    logEndpoint: 'http://localhost:3001/api/log',
+    // API endpoint (defaults to localhost for development)
+    apiBase: scriptTag?.getAttribute('data-api') || 'http://localhost:3001',
+    
+    // Mode: 'protection' (block) or 'monitor' (log only)
+    mode: scriptTag?.getAttribute('data-mode') || 'protection',
+    
+    // Timeout for API calls
     apiTimeout: 5000,
     
-    // Impel selectors
+    // Impel chatbot selectors
     chatbotSelector: '#impel-chatbot',
     messagesListSelector: '._messagesList_hamrg_14',
     botMessageSelector: '._assistantMessageContainer_ricj1_1',
@@ -34,23 +55,48 @@
     maxRetries: 60,
     blockDuration: 24 * 60 * 60 * 1000,
     
-    // Storage
-    storageKeyBlock: 'lomel_blocked',
-    storageKeyLogs: 'lomel_logs',
+    // Storage keys (namespaced by dealership)
+    get storageKeyBlock() { return `lomel_${this.dealershipId}_blocked` },
+    get storageKeyLogs() { return `lomel_${this.dealershipId}_logs` },
     
-    // Dealership info
+    // Safe response (fetched from server or default)
+    safeResponse: `For accurate information on this topic, please speak with our team directly. They'll provide you with precise details based on your specific situation.`,
     dealershipPhone: '(555) 123-4567',
-    dealershipName: 'Koons Motors',
-    
-    // Safe response (one generic message)
-    safeResponse: `For accurate information on this topic, please speak with our team directly. They'll provide you with precise details based on your specific situation. Call us at (555) 123-4567 or visit us in person.`
+    dealershipName: 'Our Dealership',
   };
+
+  // Build API endpoints
+  CONFIG.apiEndpoint = `${CONFIG.apiBase}/api/evaluate`;
+  CONFIG.logEndpoint = `${CONFIG.apiBase}/api/log`;
+  CONFIG.configEndpoint = `${CONFIG.apiBase}/api/config/${CONFIG.dealershipId}`;
 
   const processedMessages = new Set();
   let conversationContext = [];
+  let userHasInteracted = false; // Only scan after user sends first message
 
-  console.log('[LOMEL] Guard.js loaded');
+  console.log(`[LOMEL] Guard.js loaded for: ${CONFIG.dealershipId}`);
   console.log(`[LOMEL] Mode: ${CONFIG.mode}`);
+  console.log(`[LOMEL] API: ${CONFIG.apiBase}`);
+
+  // ============================================================
+  // FETCH DEALERSHIP CONFIG FROM SERVER
+  // ============================================================
+  
+  async function fetchDealershipConfig() {
+    try {
+      const response = await fetch(CONFIG.configEndpoint);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.safeResponse) CONFIG.safeResponse = data.safeResponse;
+        if (data.phone) CONFIG.dealershipPhone = data.phone;
+        if (data.name) CONFIG.dealershipName = data.name;
+        if (data.mode) CONFIG.mode = data.mode;
+        console.log(`[LOMEL] Config loaded for ${data.name || CONFIG.dealershipId}`);
+      }
+    } catch (e) {
+      console.log('[LOMEL] Using default config');
+    }
+  }
 
   // ============================================================
   // STORAGE
@@ -64,6 +110,12 @@
         }
       });
     });
+    
+    // Clear Impel session identifiers
+    localStorage.removeItem('IC::SESSIONSTORE');
+    localStorage.removeItem('SP::SESSIONSTORE');
+    sessionStorage.removeItem('IC::SESSIONSTORE');
+    sessionStorage.removeItem('SP::SESSIONSTORE');
     
     document.cookie.split(';').forEach(cookie => {
       const name = cookie.split('=')[0].trim();
@@ -99,23 +151,16 @@
   }
 
   function clearBlockFlag() {
-    // Clear Lomel storage
     localStorage.removeItem(CONFIG.storageKeyBlock);
     localStorage.removeItem(CONFIG.storageKeyLogs);
-    
-    // Clear Impel session storage (these are the actual session identifiers)
     localStorage.removeItem('IC::SESSIONSTORE');
     localStorage.removeItem('SP::SESSIONSTORE');
     sessionStorage.removeItem('IC::SESSIONSTORE');
     sessionStorage.removeItem('SP::SESSIONSTORE');
-    
-    // Clear any other Impel-related storage
     clearImpelStorage();
-    
-    // Reset internal state
     processedMessages.clear();
     conversationContext = [];
-    
+    userHasInteracted = false;
     window.location.reload();
   }
 
@@ -216,7 +261,7 @@
     setBlockFlag(reason, originalMessage);
     showBlockOverlay();
     
-    logToServer({ type: 'block', originalMessage, reason });
+    // Note: Logging is done in processMessage, not here (to avoid duplicates)
   }
 
   // ============================================================
@@ -254,7 +299,6 @@
   }
 
   function fallbackCheck(text) {
-    // Simple keyword check as backup
     const riskyPatterns = [
       /guarantee/i,
       /promise/i,
@@ -266,10 +310,10 @@
     
     for (const pattern of riskyPatterns) {
       if (pattern.test(text)) {
-        return { safe: false, reason: '[Fallback] Risky keyword detected' };
+        return { safe: false, reason: 'Risky keyword detected' };
       }
     }
-    return { safe: true, reason: '[Fallback] No risky keywords' };
+    return { safe: true, reason: 'No risky keywords' };
   }
 
   async function logToServer(data) {
@@ -279,14 +323,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dealershipId: CONFIG.dealershipId,
-          type: data.type,
-          data
+          ...data
         })
       });
     } catch (e) {
-      // Silent fail - local storage backup
+      // Silent fail
     }
     
+    // Local backup
     const logs = JSON.parse(localStorage.getItem(CONFIG.storageKeyLogs) || '[]');
     logs.push({ ...data, timestamp: Date.now() });
     localStorage.setItem(CONFIG.storageKeyLogs, JSON.stringify(logs.slice(-100)));
@@ -324,27 +368,40 @@
     if (processedMessages.has(id)) return;
     processedMessages.add(id);
     
-    console.log(`[LOMEL] ${isBot ? '🤖 BOT' : '👤 USER'}: "${text}"`);
+    // Track user messages
+    if (isUser) {
+      userHasInteracted = true;
+      console.log(`[LOMEL] 👤 USER: "${text.substring(0, 50)}..."`);
+      conversationContext.push({ type: 'user', text });
+      if (conversationContext.length > 20) conversationContext.shift();
+      return; // Don't evaluate user messages
+    }
     
-    conversationContext.push({ type: isBot ? 'bot' : 'user', text });
+    // Bot message - only evaluate if user has interacted
+    console.log(`[LOMEL] 🤖 BOT: "${text.substring(0, 50)}..."`);
+    conversationContext.push({ type: 'bot', text });
     if (conversationContext.length > 20) conversationContext.shift();
     
-    if (isBot) {
-      const result = await evaluateMessage(text, getLastUserMessage());
-      
-      logToServer({
-        type: 'evaluation',
-        botMessage: text,
-        userMessage: getLastUserMessage(),
-        safe: result.safe,
-        reason: result.reason
-      });
-      
-      if (!result.safe && CONFIG.mode === 'protection') {
-        executeBlock(el, text, result.reason);
-      } else if (!result.safe) {
-        console.log('[LOMEL] ⚠️ UNSAFE (Monitor Mode):', result.reason);
-      }
+    // Skip evaluation if user hasn't interacted yet (initial welcome messages)
+    if (!userHasInteracted) {
+      console.log('[LOMEL] ⏭️ Skipping (no user interaction yet)');
+      return;
+    }
+    
+    // Evaluate the bot's response
+    const result = await evaluateMessage(text, getLastUserMessage());
+    
+    logToServer({
+      type: result.safe ? 'pass' : 'block',
+      botMessage: text,
+      userMessage: getLastUserMessage(),
+      reason: result.reason
+    });
+    
+    if (!result.safe && CONFIG.mode === 'protection') {
+      executeBlock(el, text, result.reason);
+    } else if (!result.safe) {
+      console.log('[LOMEL] ⚠️ UNSAFE (Monitor Mode):', result.reason);
     }
   }
 
@@ -378,7 +435,10 @@
   // INIT
   // ============================================================
 
-  function init() {
+  async function init() {
+    // Fetch config from server first
+    await fetchDealershipConfig();
+    
     const blockData = checkBlockFlag();
     if (blockData) {
       console.log('[LOMEL] Block active from previous session');
@@ -424,7 +484,7 @@
 
   init();
 
-  // Debug
+  // Debug API
   window.LOMEL = {
     clearBlock: clearBlockFlag,
     getConfig: () => CONFIG,
