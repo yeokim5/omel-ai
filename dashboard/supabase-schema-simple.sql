@@ -1,4 +1,4 @@
--- LOMEL AI Database Schema (SIMPLIFIED)
+-- Omel AI Database Schema (SIMPLIFIED)
 -- Run this in Supabase SQL Editor
 
 -- ============================================================
@@ -77,7 +77,12 @@ CREATE POLICY "Users can view own dealership" ON dealerships FOR SELECT USING (
 CREATE POLICY "Users can view own logs" ON guard_logs FOR SELECT USING (
   dealership_id IN (SELECT dealership_id FROM profiles WHERE id = auth.uid())
 );
-CREATE POLICY "Allow insert logs" ON guard_logs FOR INSERT WITH CHECK (true);
+-- NOTE: Insert policy restricts to user's own dealership for security.
+-- The backend uses service role key (bypasses RLS) to insert logs from guard.js.
+-- This policy prevents anonymous clients from inserting logs for arbitrary dealerships.
+CREATE POLICY "Users can insert own logs" ON guard_logs FOR INSERT WITH CHECK (
+  dealership_id IN (SELECT dealership_id FROM profiles WHERE id = auth.uid())
+);
 
 -- Configurations
 CREATE POLICY "Users can view own config" ON configurations FOR SELECT USING (

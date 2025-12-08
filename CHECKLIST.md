@@ -1,12 +1,12 @@
-# LOMEL AI Development Checklist
+# Omel AI Development Checklist
 
-Track your progress building LOMEL AI - The Final Safety Layer for Unreliable AI Chatbots.
+Track your progress building Omel AI - The Final Safety Layer for Unreliable AI Chatbots.
 
 ---
 
 ## Product Modes
 
-LOMEL offers two modes for dealerships:
+Omel offers two modes for dealerships:
 
 | Mode | Behavior | Use Case |
 |------|----------|----------|
@@ -70,7 +70,7 @@ LOMEL offers two modes for dealerships:
 - [x] Clear Impel localStorage
 - [x] Clear Impel sessionStorage
 - [x] Clear Impel cookies
-- [x] Set LOMEL block flag with metadata
+- [x] Set Omel block flag with metadata
 
 ### 4.4 Persistent Block (Refresh Protection)
 - [x] Check for block flag on page load
@@ -85,7 +85,7 @@ LOMEL offers two modes for dealerships:
 - [x] "Chat Session Ended" message
 - [x] Dealership phone number (clickable)
 - [x] "Start Fresh Chat" button
-- [x] "Protected by LOMEL AI" branding
+- [x] "Protected by Omel AI" branding
 
 ---
 
@@ -115,7 +115,7 @@ LOMEL offers two modes for dealerships:
 - [x] Create `GET /api/blocks` endpoint
 - [x] Create `GET /api/stats` endpoint
 - [x] In-memory storage (temporary)
-- [ ] Replace with Supabase database
+- [x] Replace with Supabase database ✅
 
 ### 5.4 Connect Client to Backend
 - [x] Update guard.js API endpoint configuration
@@ -155,7 +155,7 @@ npm start
 You should see:
 ```
 ========================================
-   LOMEL AI - Backend API Server
+   Omel AI - Backend API Server
 ========================================
    Port: 3001
    OpenAI Key: ✓ Configured
@@ -214,17 +214,16 @@ Open `www.koonssilverspringford.com/index.html` in browser with the backend runn
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 6.1 Supabase Setup
+### 6.1 Supabase Setup ✅
 - [x] Create Supabase project at supabase.com
 - [x] Get project URL and anon key
-- [ ] Create database tables:
-  - [ ] `dealerships` (id, name, slug, plan, settings, created_at)
-  - [ ] `users` (id, email, dealership_id, role, created_at)
-  - [ ] `guard_logs` (id, dealership_id, type, bot_message, user_message, verdict, reason, created_at)
-  - [ ] `configurations` (id, dealership_id, mode, safe_response, phone, updated_at)
-- [ ] Set up Row Level Security (RLS) policies
+- [x] Create database tables:
+  - [x] `dealerships` (id, name, slug, created_at)
+  - [x] `profiles` (id, email, dealership_id, role, created_at)
+  - [x] `guard_logs` (id, dealership_id, type, bot_message, user_message, reason, created_at)
+  - [x] `configurations` (id, dealership_id, mode, safe_response, phone, created_at)
+- [x] Set up Row Level Security (RLS) policies
 - [x] Enable Supabase Auth (Email/Password)
-- [ ] Optional: Add Microsoft/Google OAuth
 
 ### 6.2 Next.js Dashboard Setup ✅
 - [x] Create Next.js app: `npx create-next-app@latest dashboard --typescript --tailwind --app`
@@ -236,39 +235,34 @@ Open `www.koonssilverspringford.com/index.html` in browser with the backend runn
 ### 6.3 Authentication ✅
 - [x] Create login page (email/password)
 - [x] Create registration flow
-- [ ] Add "Forgot Password" functionality
-- [ ] Optional: Add Microsoft OAuth (many dealerships use Outlook)
-- [ ] Optional: Add Google OAuth
+- [x] Add "Forgot Password" functionality
 - [x] Protect dashboard routes with middleware
-- [ ] Link users to their dealership
+- [x] Link users to their dealership
 
-### 6.4 Dashboard Home ✅ (UI Complete - Needs Real Data)
+### 6.4 Dashboard Home ✅
 - [x] Build dashboard layout (sidebar + main content)
 - [x] Status badge: "SYSTEM ACTIVE" (green pulsing shield)
 - [x] Mode toggle: Monitor / Protection (in settings)
-- [x] Big metric cards (mock data):
+- [x] Big metric cards:
   - [x] Chats Scanned (total volume)
   - [x] Threats Blocked (protection mode)
-  - [x] Threats Detected (monitor mode)
-  - [x] Security Drills Passed
-- [x] Activity feed (mock data)
-- [ ] Connect to real Supabase data
+- [x] Activity feed (real data from Supabase)
+- [x] Connect to real Supabase data
 - [ ] "Green Wave" graph of messages scanned over time
 - [ ] Real-time updates using Supabase Realtime
 
-### 6.5 Alert Log ✅ (UI Complete - Needs Real Data)
+### 6.5 Alert Log ✅
 - [x] Create alerts/notifications page
 - [x] List all blocked/detected threats with details
-- [x] Show: timestamp, original message, category, reason
-- [ ] Connect to real Supabase data
+- [x] Show: timestamp, original message, reason
+- [x] Connect to real Supabase data
 - [ ] Expandable to see full conversation context
 - [ ] Mark alerts as reviewed
-- [ ] Filter by date, category, severity
 
-### 6.6 Settings ✅ (UI Complete - Needs Real Data)
-- [x] Update dealership info (name, phone) - UI done
-- [x] Switch between Monitor/Protection mode - UI done
-- [ ] Connect to real Supabase data
+### 6.6 Settings ✅
+- [x] Update dealership info (name, phone)
+- [x] Switch between Monitor/Protection mode
+- [x] Connect to real Supabase data (saves to DB)
 - [ ] Customize safe response templates
 - [ ] Email report preferences (daily/weekly/none)
 - [ ] Manage team members (invite/remove)
@@ -285,11 +279,12 @@ Open `www.koonssilverspringford.com/index.html` in browser with the backend runn
 - [ ] Include monthly stats and blocked threats
 - [ ] Professional formatting for legal/management
 
-### 6.9 Update Backend API
-- [ ] Migrate from in-memory storage to Supabase
-- [ ] Update `/api/log` to write to Supabase
-- [ ] Update `/api/evaluate` to log results to Supabase
-- [ ] Add dealership authentication to API
+### 6.9 Update Backend API ✅
+- [x] Migrate from in-memory storage to Supabase
+- [x] Update `/api/log` to write to Supabase
+- [x] Add `/api/config/:slug` endpoint for dealership config
+- [x] Dealership identification via slug
+- [ ] Add API key authentication for production
 
 ---
 
@@ -306,7 +301,7 @@ Open `www.koonssilverspringford.com/index.html` in browser with the backend runn
 ### Step 2: Create Next.js Dashboard
 
 ```bash
-cd "Lomel AI"
+cd "Omel AI"
 npx create-next-app@latest dashboard --typescript --tailwind --app --eslint
 cd dashboard
 npm install @supabase/supabase-js @supabase/ssr
@@ -363,7 +358,7 @@ Or connect GitHub repo to Vercel for auto-deploy.
 - [ ] Create onboarding flow for new dealerships
 - [ ] Write installation documentation (one-line script)
 - [ ] Set up billing (Stripe)
-- [ ] Create marketing site (lomel.ai)
+- [ ] Create marketing site (omel.ai)
 - [ ] Launch to first pilot customer
 
 ---
@@ -373,11 +368,11 @@ Or connect GitHub repo to Vercel for auto-deploy.
 | Component | Technology | Status |
 |-----------|------------|--------|
 | Client Script | Vanilla JavaScript (`guard.js`) | ✅ Done |
-| Backend API | Node.js + Express | ✅ Done |
+| Backend API | Node.js + Express + Supabase | ✅ Done |
 | AI Evaluation | OpenAI ChatGPT API (`gpt-4o-mini`) | ✅ Done |
-| Database | Supabase PostgreSQL | 🟡 Tables needed |
-| Auth | Supabase Auth (Email + OAuth) | ✅ Done (Email) |
-| Dashboard | Next.js 15 (App Router) + Tailwind CSS | ✅ UI Done |
+| Database | Supabase PostgreSQL | ✅ Done |
+| Auth | Supabase Auth (Email) | ✅ Done |
+| Dashboard | Next.js 15 (App Router) + Tailwind CSS | ✅ Done |
 | Real-time Updates | Supabase Realtime | 🔲 TODO |
 | Email Reports | Resend | 🔲 TODO |
 | Frontend Hosting | Vercel | 🔲 TODO |
@@ -444,7 +439,7 @@ CREATE TABLE configurations (
 ## File Structure
 
 ```
-Lomel AI/
+Omel AI/
 ├── backend/
 │   ├── package.json
 │   ├── server.js          # Express API server
@@ -488,44 +483,65 @@ Lomel AI/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/evaluate` | Evaluate bot message with ChatGPT |
-| POST | `/api/log` | Log chat events |
+| POST | `/api/log` | Log chat events to Supabase |
+| GET | `/api/config/:slug` | Get dealership config by slug |
 | GET | `/api/logs` | Get chat logs |
-| GET | `/api/blocks` | Get blocked events |
-| GET | `/api/stats` | Get statistics |
 | GET | `/api/health` | Health check |
 
 ---
 
+## Guard.js Installation
+
+```html
+<!-- Add to dealership website <head> -->
+<script 
+  src="https://cdn.omel.ai/guard.js" 
+  data-dealership="dealership-slug"
+  data-api="https://api.omel.ai">
+</script>
+```
+
+For local testing:
+```html
+<script 
+  src="/guard.js" 
+  data-dealership="koons-motors"
+  data-api="http://localhost:3001">
+</script>
+```
+
 ## Debug Commands (Browser Console)
 
 ```javascript
-LOMEL.getLogs()           // View local logs
-LOMEL.clearBlock()        // Clear block and refresh
-LOMEL.getConfig()         // View settings
-LOMEL.setMode('monitor')  // Switch to monitor mode
-LOMEL.setMode('protection') // Switch to protection mode
-LOMEL.testEvaluate("I guarantee $8000") // Test evaluation
+OMEL.getLogs()           // View local logs
+OMEL.clearBlock()        // Clear block and refresh
+OMEL.getConfig()         // View config including dealership
+OMEL.setMode('monitor')  // Switch to monitor mode
+OMEL.setMode('protection') // Switch to protection mode
 ```
 
 ---
 
 ## Notes
 
-**Current Focus:** Phase 6 - Dashboard MVP (Connecting to Real Data)
+**Current Focus:** Phase 6 Complete! → Phase 7 & 8 (Polish & Deploy)
 
 **What's Done:**
-- ✅ Next.js dashboard created and running
-- ✅ Supabase project created with auth enabled
-- ✅ Login/signup pages working
-- ✅ Dashboard UI complete (home, alerts, settings)
-- ✅ Protected routes with middleware
+- ✅ guard.js working on real dealership website
+- ✅ Backend connected to Supabase (logs saved to DB)
+- ✅ Dashboard showing real data from Supabase
+- ✅ Login/signup working with user-dealership linking
+- ✅ Settings save to database
+- ✅ Dealership-specific script tags (`data-dealership="slug"`)
+- ✅ Skips initial welcome messages (saves API calls)
 
 **Next Steps:**
-1. Create database tables in Supabase (run SQL schema)
-2. Connect dashboard to real Supabase data
-3. Update backend API to write logs to Supabase
-4. Add real-time updates to dashboard
-5. Deploy to Vercel
+1. Deploy backend to Railway/Vercel
+2. Deploy dashboard to Vercel
+3. Host guard.js on CDN
+4. Set up email reports (Phase 6.7)
+5. Create security drills (Phase 7)
+6. Launch to first customer (Phase 8)
 
 **Impel DOM Selectors:**
 - Container: `#impel-chatbot`
@@ -538,4 +554,4 @@ LOMEL.testEvaluate("I guarantee $8000") // Test evaluation
 
 ---
 
-*Last Updated: December 6, 2024*
+*Last Updated: December 6, 2024 (End of Day)*
