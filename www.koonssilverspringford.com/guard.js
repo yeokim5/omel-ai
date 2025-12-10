@@ -10,9 +10,9 @@
  * INSTALLATION (add to dealership website <head>):
  * 
  *   <script 
- *     src="https://cdn.omel.ai/guard.js" 
+ *     src="/guard.js" 
  *     data-dealership="YOUR_DEALERSHIP_SLUG"
- *     data-api="https://api.omel.ai">
+ *     data-api="https://omel-ai-production.up.railway.app">
  *   </script>
  * 
  * LOCAL TESTING:
@@ -69,7 +69,7 @@ if (!window.__OMEL_HEARTBEAT__) {
     dealershipId: scriptTag?.getAttribute('data-dealership') || 'demo-dealership',
     
     // Backend API URL
-    apiBase: scriptTag?.getAttribute('data-api') || 'http://localhost:3001',
+    apiBase: scriptTag?.getAttribute('data-api') || 'https://omel-ai-production.up.railway.app',
     
     // Operating mode: 'protection' = block unsafe, 'monitor' = log only
     mode: scriptTag?.getAttribute('data-mode') || 'protection',
