@@ -68,8 +68,8 @@ if (!window.__OMEL_HEARTBEAT__) {
     // Dealership identifier (used for logging and config lookup)
     dealershipId: scriptTag?.getAttribute('data-dealership') || 'demo-dealership',
     
-    // Backend API URL
-    apiBase: scriptTag?.getAttribute('data-api') || 'https://omel-ai-production.up.railway.app',
+    // Backend API URL (trailing slash removed if present)
+    apiBase: (scriptTag?.getAttribute('data-api') || 'https://omel-ai-production.up.railway.app').replace(/\/$/, ''),
     
     // Operating mode: 'protection' = block unsafe, 'monitor' = log only
     mode: scriptTag?.getAttribute('data-mode') || 'protection',
