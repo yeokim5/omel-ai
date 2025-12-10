@@ -51,6 +51,8 @@ if (!window.__OMEL_HEARTBEAT__) {
   // Prevent double initialization (important for SPA navigation)
   if (window.__OMEL_INITIALIZED__) {
     console.log('[OMEL] ⚠️ Already initialized, skipping duplicate');
+    // Still expose debug API even on duplicate load
+    exposeDebugAPI();
     return;
   }
   window.__OMEL_INITIALIZED__ = true;
@@ -803,32 +805,38 @@ if (!window.__OMEL_HEARTBEAT__) {
   
   /**
    * Expose debug methods on window.OMEL for testing
+   * This is in a function so it can be called even on duplicate script loads
    */
-  window.OMEL = {
-    clearBlock: clearBlockFlag,
-    getConfig: () => CONFIG,
-    getLogs: () => JSON.parse(localStorage.getItem(CONFIG.storageKeyLogs) || '[]'),
-    setMode: m => { CONFIG.mode = m; console.log('Mode:', m); },
-    // Debug: Check if chatbot is currently visible
-    checkChatbot: () => {
-      const chatbot = document.querySelector(CONFIG.chatbotSelector);
-      const messagesList = chatbot ? findWithSelectors(chatbot, CONFIG.messagesListSelectors) : null;
-      console.log('[OMEL] Debug - Chatbot element:', chatbot ? '✅ Found' : '❌ Not found');
-      console.log('[OMEL] Debug - Messages list:', messagesList ? '✅ Found' : '❌ Not found');
-      if (chatbot && !messagesList) {
-        console.log('[OMEL] Debug - Chatbot HTML preview:', chatbot.innerHTML.substring(0, 500));
+  function exposeDebugAPI() {
+    window.OMEL = {
+      clearBlock: clearBlockFlag,
+      getConfig: () => CONFIG,
+      getLogs: () => JSON.parse(localStorage.getItem(CONFIG.storageKeyLogs) || '[]'),
+      setMode: m => { CONFIG.mode = m; console.log('Mode:', m); },
+      // Debug: Check if chatbot is currently visible
+      checkChatbot: () => {
+        const chatbot = document.querySelector(CONFIG.chatbotSelector);
+        const messagesList = chatbot ? findWithSelectors(chatbot, CONFIG.messagesListSelectors) : null;
+        console.log('[OMEL] Debug - Chatbot element:', chatbot ? '✅ Found' : '❌ Not found');
+        console.log('[OMEL] Debug - Messages list:', messagesList ? '✅ Found' : '❌ Not found');
+        if (chatbot && !messagesList) {
+          console.log('[OMEL] Debug - Chatbot HTML preview:', chatbot.innerHTML.substring(0, 500));
+        }
+        return { chatbot: !!chatbot, messagesList: !!messagesList };
+      },
+      // Debug: Manually reinitialize
+      reinit: () => {
+        console.log('[OMEL] 🔄 Reinitializing...');
+        processedMessages.clear();
+        conversationContext = [];
+        userHasInteracted = false;
+        init();
       }
-      return { chatbot: !!chatbot, messagesList: !!messagesList };
-    },
-    // Debug: Manually reinitialize
-    reinit: () => {
-      console.log('[OMEL] 🔄 Reinitializing...');
-      processedMessages.clear();
-      conversationContext = [];
-      userHasInteracted = false;
-      init();
-    }
-  };
+    };
+  }
+  
+  // Expose the debug API
+  exposeDebugAPI();
 
   // ============================================================
   // CHATBOT RELOAD DETECTION
